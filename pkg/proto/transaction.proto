@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package stori;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "pkg/proto";
+
+service TransactionService {
+  rpc CreateTransaction(CreateTransactionRequest) returns (Transaction) {}
+  rpc GetTransactionSummary(GetTransactionSummaryRequest) returns (TransactionSummary) {}
+  // Add other methods as needed
+}
+
+message CreateTransactionRequest {
+  string account_id = 1;
+  double amount = 2;
+  string type = 3;
+  string input_file_id = 4;
+  google.protobuf.Timestamp input_date = 5;
+}
+
+message GetTransactionSummaryRequest {
+  string account_id = 1;
+}
+
+message Transaction {
+  string id = 1;
+  string account_id = 2;
+  double amount = 3;
+  string type = 4;
+  string input_file_id = 5;
+  google.protobuf.Timestamp input_date = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message TransactionSummary {
+  double total_balance = 1;
+  int32 total_count = 2;
+  double average_credit = 3;
+  double average_debit = 4;
+}

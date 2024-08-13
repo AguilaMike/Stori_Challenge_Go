@@ -1,0 +1,11 @@
+Subject: Transaction Summary
+
+Total balance is {{.TotalBalance}}
+
+Number of transactions by month:
+{{range $month, $count := .MonthlyTransactions}}
+  {{$month}}: {{$count}}
+{{end}}
+
+Average debit amount: {{.AverageDebit}}
+Average credit amount: {{.AverageCredit}}

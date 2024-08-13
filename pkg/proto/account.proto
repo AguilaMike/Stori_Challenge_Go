@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package stori;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "pkg/proto";
+
+service AccountService {
+  rpc CreateAccount(CreateAccountRequest) returns (Account) {}
+  rpc GetAccount(GetAccountRequest) returns (Account) {}
+}
+
+message CreateAccountRequest {
+  string nickname = 1;
+  string email = 2;
+}
+
+message GetAccountRequest {
+  string id = 1;
+}
+
+message Account {
+  string id = 1;
+  string nickname = 2;
+  string email = 3;
+  double balance = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  bool active = 7;
+}
