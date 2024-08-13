@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stori Challenge</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Stori Challenge</h1>
+    </header>
+    <main>
+      <section id="user-list">
+        <h2>Usuarios registrados</h2>
+        <button id="new-user-btn">Crear nuevo usuario</button>
+        <ul id="users"></ul>
+      </section>
+    </main>
+
+    <!-- Modal para crear nuevo usuario -->
+    <div id="new-user-modal" class="modal">
+      <div class="modal-content">
+        <h2>Crear nuevo usuario</h2>
+        <form id="new-user-form">
+          <label for="nickname">Nickname:</label>
+          <input type="text" id="nickname" name="nickname" required />
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" required />
+          <button type="submit">Crear usuario</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal para detalles de usuario y transacciones -->
+    <div id="user-details-modal" class="modal">
+      <div class="modal-content">
+        <h2 id="user-details-title"></h2>
+        <div id="transactions-list"></div>
+        <button id="send-email-btn">Enviar por correo</button>
+        <form id="upload-form">
+          <label for="transaction-file">Subir archivo de transacciones:</label>
+          <input type="file" id="transaction-file" name="transaction-file" accept=".csv" />
+          <button type="submit">Procesar archivo</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+  </body>
+</html>
