@@ -10,52 +10,43 @@ import (
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/account/domain"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/account/ports"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/db/sqlc"
+	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/nats"
 )
 
 type PostgresAccountRepository struct {
 	queries *sqlc.Queries
+	nats    *nats.NatsClient
 }
 
-func NewPostgresAccountRepository(db *sql.DB) ports.AccountRepository {
+func NewPostgresAccountRepository(db *sql.DB, nc *nats.NatsClient) ports.AccountRepository {
 	return &PostgresAccountRepository{
 		queries: sqlc.New(db),
+		nats:    nc,
 	}
 }
 
 func (r *PostgresAccountRepository) Create(ctx context.Context, account *domain.Account) error {
 	_, err := r.queries.CreateAccount(ctx, sqlc.CreateAccountParams{
 		ID:        account.ID,
-		Nickname:  account.NickName,
+		Nickname:  account.Nickname,
 		Email:     account.Email,
 		Balance:   strconv.FormatFloat(account.Balance, 'f', -1, 64),
 		CreatedAt: account.CreatedAt,
 		UpdatedAt: account.UpdatedAt,
 		Active:    account.Active,
 	})
-	return err
-}
-
-func (r *PostgresAccountRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Account, error) {
-	dbAccount, err := r.queries.GetAccount(ctx, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	balance, _ := strconv.ParseFloat(dbAccount.Balance, 64)
-	return &domain.Account{
-		ID:        dbAccount.ID,
-		NickName:  dbAccount.Nickname,
-		Balance:   balance,
-		Email:     dbAccount.Email,
-		CreatedAt: dbAccount.CreatedAt,
-		UpdatedAt: dbAccount.UpdatedAt,
-		Active:    dbAccount.Active,
-	}, nil
+
+	// Publish event to NATS
+	return r.publishEvent("account.created", account)
 }
 
 func (r *PostgresAccountRepository) Update(ctx context.Context, account *domain.Account) error {
 	_, err := r.queries.UpdateAccount(ctx, sqlc.UpdateAccountParams{
 		ID:        account.ID,
-		Nickname:  account.NickName,
+		Nickname:  account.Nickname,
 		Email:     account.Email,
 		Balance:   strconv.FormatFloat(account.Balance, 'f', -1, 64),
 		UpdatedAt: account.UpdatedAt,
@@ -64,34 +55,21 @@ func (r *PostgresAccountRepository) Update(ctx context.Context, account *domain.
 	if err != nil {
 		return err
 	}
-	return nil
+
+	// Publish event to NATS
+	return r.publishEvent("account.updated", account)
 }
 
 func (r *PostgresAccountRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.queries.DeleteAccount(ctx, id)
+	err := r.queries.DeleteAccount(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Publish event to NATS
+	return r.publishEvent("account.deleted", map[string]string{"id": id.String()})
 }
 
-func (r *PostgresAccountRepository) List(ctx context.Context, limit, offset int64) ([]*domain.Account, error) {
-	dbAccounts, err := r.queries.ListAccounts(ctx, sqlc.ListAccountsParams{
-		Limit:  limit,
-		Offset: offset,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	accounts := make([]*domain.Account, len(dbAccounts))
-	for i, dbAccount := range dbAccounts {
-		balance, _ := strconv.ParseFloat(dbAccount.Balance, 64)
-		accounts[i] = &domain.Account{
-			ID:        dbAccount.ID,
-			NickName:  dbAccount.Nickname,
-			Email:     dbAccount.Email,
-			Balance:   balance,
-			CreatedAt: dbAccount.CreatedAt,
-			UpdatedAt: dbAccount.UpdatedAt,
-			Active:    dbAccount.Active,
-		}
-	}
-	return accounts, nil
+func (r *PostgresAccountRepository) publishEvent(subject string, payload interface{}) error {
+	return r.nats.Publish(subject, payload)
 }

@@ -66,7 +66,7 @@ func main() {
 	}
 	emailSender := email.NewSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword)
 
-	accountService := account.SetupAccountDomain(pgDB, esClient)
+	accountService := account.SetupAccountDomain(pgDB, esClient, nc)
 	transactionService := transaction.SetupTransactionDomain(pgDB, esClient, nc, connGrpc, emailSender)
 
 	// Set up API HTTP router

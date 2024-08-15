@@ -8,7 +8,7 @@ import (
 
 type Account struct {
 	ID        uuid.UUID
-	NickName  string
+	Nickname  string
 	Email     string
 	Balance   float64
 	CreatedAt int64
@@ -20,7 +20,7 @@ func NewAccount(nickname, email string) *Account {
 	now := time.Now().UTC().Unix()
 	return &Account{
 		ID:        uuid.New(),
-		NickName:  nickname,
+		Nickname:  nickname,
 		Email:     email,
 		Balance:   0,
 		CreatedAt: now,

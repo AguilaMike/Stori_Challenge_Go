@@ -24,7 +24,7 @@ func (s *AccountServer) CreateAccount(ctx context.Context, req *pb.CreateAccount
 
 	return &pb.Account{
 		Id:       account.ID.String(),
-		Nickname: account.NickName,
+		Nickname: account.Nickname,
 		Balance:  account.Balance,
 		// Set other fields
 	}, nil

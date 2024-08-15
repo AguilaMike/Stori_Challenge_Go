@@ -32,8 +32,18 @@ func UsersHandler(accountService *account.AccountService) http.HandlerFunc {
 			return
 		}
 
+		// Convertir la estructura de dominio a una estructura DTO
+		response := make([]AccountDTO, 0, len(users))
+		for _, user := range users {
+			response = append(response, AccountDTO{
+				ID:       user.ID.String(),
+				Nickname: user.Nickname,
+				Email:    user.Email,
+			})
+		}
+
 		// Convertir la estructura a JSON
-		jsonResponse, err := json.Marshal(users)
+		jsonResponse, err := json.Marshal(response)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

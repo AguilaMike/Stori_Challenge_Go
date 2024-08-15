@@ -30,26 +30,23 @@ func NewElasticsearchTransactionRepository(client *elastic.Client, nc *nats.Nats
 }
 
 func (r *ElasticsearchTransactionRepository) subscribeToEvents() {
-	_, err := r.nats.Subscribe(domain.TransactionCreatedEvent, func(data []byte) {
-		var transaction domain.Transaction
-		err := json.Unmarshal(data, &transaction)
-		if err != nil {
-			log.Printf("Failed to unmarshal transaction: %v", err)
-			return
-		}
+	r.nats.Subscribe("transaction.created", r.handleTransactionCreated)
+}
 
-		_, err = r.client.Index().
-			Index(r.index).
-			Id(transaction.ID.String()).
-			BodyJson(transaction).
-			Do(context.Background())
-		if err != nil {
-			log.Printf("Failed to index transaction: %v", err)
-			return
-		}
-	})
+func (r *ElasticsearchTransactionRepository) handleTransactionCreated(data []byte) {
+	var transaction domain.Transaction
+	if err := json.Unmarshal(data, &transaction); err != nil {
+		log.Printf("Error unmarshaling transaction: %v", err)
+		return
+	}
+
+	_, err := r.client.Index().
+		Index(r.index).
+		Id(transaction.ID.String()).
+		BodyJson(transaction).
+		Do(context.Background())
 	if err != nil {
-		log.Fatalf("Failed to subscribe to transaction.created: %v", err)
+		log.Printf("Error indexing transaction: %v", err)
 	}
 }
 

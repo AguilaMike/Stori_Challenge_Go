@@ -10,10 +10,8 @@ import (
 
 type AccountRepository interface {
 	Create(ctx context.Context, account *domain.Account) error
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.Account, error)
 	Update(ctx context.Context, account *domain.Account) error
 	Delete(ctx context.Context, id uuid.UUID) error
-	List(ctx context.Context, limit, offset int64) ([]*domain.Account, error)
 }
 
 type AccountQueryRepository interface {

@@ -29,7 +29,7 @@ func (s *AccountServer) CreateAccount(ctx context.Context, req *pb.CreateAccount
 
 	return &pb.Account{
 		Id:        account.ID.String(),
-		Nickname:  account.NickName,
+		Nickname:  account.Nickname,
 		Balance:   account.Balance,
 		CreatedAt: timestamppb.New(time.Unix(int64(account.CreatedAt), 0)),
 		UpdatedAt: timestamppb.New(time.Unix(int64(account.UpdatedAt), 0)),
@@ -50,7 +50,7 @@ func (s *AccountServer) GetAccount(ctx context.Context, req *pb.GetAccountReques
 
 	return &pb.Account{
 		Id:        account.ID.String(),
-		Nickname:  account.NickName,
+		Nickname:  account.Nickname,
 		Balance:   account.Balance,
 		CreatedAt: timestamppb.New(time.Unix(int64(account.CreatedAt), 0)),
 		UpdatedAt: timestamppb.New(time.Unix(int64(account.UpdatedAt), 0)),
