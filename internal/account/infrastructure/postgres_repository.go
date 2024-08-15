@@ -26,6 +26,7 @@ func (r *PostgresAccountRepository) Create(ctx context.Context, account *domain.
 	_, err := r.queries.CreateAccount(ctx, sqlc.CreateAccountParams{
 		ID:        account.ID,
 		Nickname:  account.NickName,
+		Email:     account.Email,
 		Balance:   strconv.FormatFloat(account.Balance, 'f', -1, 64),
 		CreatedAt: account.CreatedAt,
 		UpdatedAt: account.UpdatedAt,
@@ -44,6 +45,7 @@ func (r *PostgresAccountRepository) GetByID(ctx context.Context, id uuid.UUID) (
 		ID:        dbAccount.ID,
 		NickName:  dbAccount.Nickname,
 		Balance:   balance,
+		Email:     dbAccount.Email,
 		CreatedAt: dbAccount.CreatedAt,
 		UpdatedAt: dbAccount.UpdatedAt,
 		Active:    dbAccount.Active,
@@ -54,6 +56,7 @@ func (r *PostgresAccountRepository) Update(ctx context.Context, account *domain.
 	_, err := r.queries.UpdateAccount(ctx, sqlc.UpdateAccountParams{
 		ID:        account.ID,
 		Nickname:  account.NickName,
+		Email:     account.Email,
 		Balance:   strconv.FormatFloat(account.Balance, 'f', -1, 64),
 		UpdatedAt: account.UpdatedAt,
 		Active:    account.Active,
@@ -83,6 +86,7 @@ func (r *PostgresAccountRepository) List(ctx context.Context, limit, offset int6
 		accounts[i] = &domain.Account{
 			ID:        dbAccount.ID,
 			NickName:  dbAccount.Nickname,
+			Email:     dbAccount.Email,
 			Balance:   balance,
 			CreatedAt: dbAccount.CreatedAt,
 			UpdatedAt: dbAccount.UpdatedAt,

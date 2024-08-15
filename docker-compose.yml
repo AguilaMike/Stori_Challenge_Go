@@ -1,32 +1,135 @@
-version: "3"
+version: "3.8"
+
+networks:
+  stori-network:
+    driver: bridge
 
 services:
-  app:
-    build: .
+  nats:
+    image: nats:latest
     ports:
-      - "8080:8080"
-    depends_on:
-      - db
-      - migrations
-    environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/stori?sslmode=disable
+      - "4222:4222"
+      - "8222:8222"
+    command: "--jetstream"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stori-network
 
-  migrations:
-    build: .
-    command: ["./db_tools", "migrate", "-direction", "up"]
-    depends_on:
-      - db
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/stori?sslmode=disable
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - stori-network
 
-  db:
+  postgres:
     image: postgres:13
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
       POSTGRES_DB: stori
+      POSTGRES_USER: storiuser
+      POSTGRES_PASSWORD: storipass
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U storiuser -d stori"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stori-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@stori.com
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - stori-network
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - stori-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    depends_on:
+      nats:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgres://storiuser:storipass@postgres:5432/stori?sslmode=disable
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - NATS_URL=nats://nats:4222
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - API_PORT=8080
+      - GRPC_PORT=50051
+    networks:
+      - stori-network
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    depends_on:
+      nats:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgres://storiuser:storipass@postgres:5432/stori?sslmode=disable
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - NATS_URL=nats://nats:4222
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+    networks:
+      - stori-network
+    restart: on-failure
 
 volumes:
+  esdata:
   pgdata:

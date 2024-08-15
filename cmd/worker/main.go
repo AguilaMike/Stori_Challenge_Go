@@ -39,6 +39,11 @@ func main() {
 	}
 	defer pgDB.Close()
 
+	// Ejecutar migraciones
+	if err := db.RunMigrations(pgDB, "/root/migrations"); err != nil {
+		log.Fatalf("Failed to run database migrations: %v", err)
+	}
+
 	esClient, err := elasticsearch.NewElasticsearchClient(cfg.ElasticsearchURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to Elasticsearch: %v", err)

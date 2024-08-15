@@ -79,5 +79,5 @@ This project is licensed under the MIT License.
 
 ### Comands to update code
 sqlc generate
-migrate -source file://scripts/migrations -database postgres://sa:1234@localhost:5432/stori?sslmode=disable up
+migrate -source file://scripts/migrations -database postgres://sa:@dmin1234@localhost:5432/stori?sslmode=disable up
 protoc --go_out=. --go-grpc_out=. pkg/proto/*.proto

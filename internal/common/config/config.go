@@ -14,6 +14,8 @@ type Config struct {
 	DatabasePassword string `mapstructure:"DATABASE_PASSWORD"`
 	DatabaseName     string `mapstructure:"DATABASE_NAME"`
 	DatabaseSllMode  string `mapstructure:"DATABASE_SSLMODE"`
+	DatabaseMaxOpen  int    `mapstructure:"DATABASE_MAX_CONNECTIONS"`
+	DatabaseMaxIdle  int    `mapstructure:"DATABASE_MAX_IDLE_CONNECTIONS"`
 	ElasticsearchURL string `mapstructure:"ELASTICSEARCH_URL"`
 	NatsURL          string `mapstructure:"NATS_URL"`
 	SMTPHost         string `mapstructure:"SMTP_HOST"`
@@ -39,10 +41,8 @@ func (v *Config) GetConnectionString() string {
 
 func LoadConfig(path string) (config Config, err error) {
 	viper.AddConfigPath(path)
-	viper.SetConfigName("app")
+	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
-
-	viper.AutomaticEnv()
 
 	err = viper.ReadInConfig()
 	if err != nil {

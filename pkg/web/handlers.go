@@ -1,6 +1,8 @@
 package web
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -10,19 +12,44 @@ import (
 )
 
 // HomeHandler maneja la ruta raíz
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/users", http.StatusSeeOther)
-}
-
-// UsersHandler maneja la lista de usuarios
-func UsersHandler(accountService *account.AccountService) http.HandlerFunc {
+func HomeHandler(accountService *account.AccountService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		users, err := accountService.ListAccounts(r.Context(), 100, 0)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		RenderTemplate(w, "users.html", users)
+		RenderTemplate(w, "index.html", users)
+	}
+}
+
+// UsersHandler maneja la lista de usuarios
+func UsersHandler(accountService *account.AccountService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		users, err := accountService.ListAccounts(r.Context(), 1000, 0)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Convertir la estructura a JSON
+		jsonResponse, err := json.Marshal(users)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("Users: %s", jsonResponse)
+
+		// Configurar los encabezados de la respuesta
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		// Escribir la respuesta JSON
+		_, err = w.Write(jsonResponse)
+		if err != nil {
+			log.Printf("Error writing response: %v", err)
+		}
 	}
 }
 
@@ -30,10 +57,22 @@ func UsersHandler(accountService *account.AccountService) http.HandlerFunc {
 func CreateUserHandler(accountService *account.AccountService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
-			nickname := r.FormValue("nickname")
-			email := r.FormValue("email")
+			type User struct {
+				Nickname string `json:"nickname"`
+				Email    string `json:"email"`
+			}
 
-			_, err := accountService.CreateAccount(r.Context(), nickname, email)
+			var user User
+			err := json.NewDecoder(r.Body).Decode(&user)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			nickname := user.Nickname
+			email := user.Email
+
+			_, err = accountService.CreateAccount(r.Context(), nickname, email)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -113,7 +152,7 @@ func SetupWebRoutes(
 	mux := http.NewServeMux()
 
 	// Configurar rutas
-	mux.HandleFunc("/", HomeHandler)
+	mux.HandleFunc("/", HomeHandler(accountService))
 	mux.HandleFunc("/users", UsersHandler(accountService))
 	mux.HandleFunc("/users/create", CreateUserHandler(accountService))
 	mux.HandleFunc("/users/detail", UserDetailHandler(accountService, transactionService))

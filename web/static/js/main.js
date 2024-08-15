@@ -25,16 +25,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function loadUsers() {
-        fetch('/api/accounts')
+        fetch('/users')
             .then(response => response.json())
             .then(users => {
                 userList.innerHTML = '';
-                users.forEach(user => {
+                if (users && users.length > 0) {
+                    users.forEach(user => {
+                        const li = document.createElement('li');
+                        li.textContent = `${user.nickname} (${user.email})`;
+                        li.addEventListener('click', () => showUserDetails(user.id));
+                        userList.appendChild(li);
+                    });
+                } else {
                     const li = document.createElement('li');
-                    li.textContent = `${user.nickname} (${user.email})`;
-                    li.addEventListener('click', () => showUserDetails(user.id));
+                    li.textContent = 'No hay usuarios registrados';
                     userList.appendChild(li);
-                });
+                }
             })
             .catch(error => console.error('Error loading users:', error));
     }
@@ -42,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createUser(event) {
         event.preventDefault();
         const formData = new FormData(newUserForm);
-        fetch('/api/accounts', {
+        fetch('/users/create', {
             method: 'POST',
             body: JSON.stringify(Object.fromEntries(formData)),
             headers: { 'Content-Type': 'application/json' }
@@ -57,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showUserDetails(userId) {
-        fetch(`/api/accounts/${userId}`)
+        fetch(`/users/detail/${userId}`)
             .then(response => response.json())
             .then(user => {
                 userDetailsTitle.textContent = `Detalles de ${user.nickname}`;
@@ -118,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const userId = userDetailsTitle.dataset.userId;
         const formData = new FormData(uploadForm);
         formData.append('user_id', userId);
-        fetch('/api/transactions/upload', {
+        fetch('/upload', {
             method: 'POST',
             body: formData
         })
