@@ -78,6 +78,10 @@ Migrations are automatically run when the application starts. To run them manual
 - `sqlc`: Contains configuration files by sqlc framwework database
 - `web/`: Contains web-related files (HTML, JS, etc.).
 
+## DEMO
+
+- Video [https://drive.google.com/file/d/1tWSTnpYYa0K1FQJGWW6rpBjwr-0EMTZc/view?usp=drive_link](Explain project in Spanish)
+
 ## License
 
 This project is licensed under the MIT License.
