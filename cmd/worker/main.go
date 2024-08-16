@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -103,18 +105,25 @@ func setupWorkerTasks(
 
 	_, err := natsClient.Subscribe("transaction.file.uploaded", func(data []byte) {
 		var fileInfo struct {
-			FilePath string    `json:"file_path"`
-			UserID   uuid.UUID `json:"user_id"`
+			FileName    string    `json:"file_name"`
+			FileContent string    `json:"file_content"`
+			UserID      uuid.UUID `json:"user_id"`
 		}
 
-		log.Printf("Processing file: %s", data)
 		err := json.Unmarshal(data, &fileInfo)
 		if err != nil {
 			log.Printf("Error unmarshaling file info: %v", err)
 			return
 		}
 
-		transactions, err := processTransactionFile(fileInfo.FilePath, fileInfo.UserID)
+		// Decodificar el contenido del archivo
+		decodedContent, err := base64.StdEncoding.DecodeString(fileInfo.FileContent)
+		if err != nil {
+			log.Printf("Error decoding file content: %v", err)
+			return
+		}
+
+		transactions, err := processTransactionFile(decodedContent, fileInfo.FileName, fileInfo.UserID)
 		if err != nil {
 			log.Printf("Error processing transaction file: %v", err)
 			return
@@ -146,27 +155,24 @@ func setupWorkerTasks(
 		})
 		wsService.SendUpdate(fileInfo.UserID.String(), updateMessage)
 
-		log.Printf("Successfully processed file %s for user %s", fileInfo.FilePath, fileInfo.UserID)
+		log.Printf("Successfully processed file %s for user %s", fileInfo.FileName, fileInfo.UserID)
 	})
 
 	return err
 }
 
-func processTransactionFile(filePath string, userID uuid.UUID) ([]*domain.Transaction, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	reader := csv.NewReader(file)
+func processTransactionFile(content []byte, filename string, userID uuid.UUID) ([]*domain.Transaction, error) {
+	reader := csv.NewReader(strings.NewReader(string(content)))
 	records, err := reader.ReadAll()
 	if err != nil {
 		return nil, err
 	}
 
 	var transactions []*domain.Transaction
-	for _, record := range records {
+	for i, record := range records {
+		if i == 0 {
+			continue // Skip header
+		}
 		if len(record) != 2 {
 			log.Printf("Skipping invalid record: %v", record)
 			continue // Skip invalid records
@@ -184,10 +190,7 @@ func processTransactionFile(filePath string, userID uuid.UUID) ([]*domain.Transa
 			continue // Skip invalid amounts
 		}
 
-		if record[1][0] == '-' {
-			amount *= -1
-		}
-		transaction := domain.NewTransaction(userID, amount, filePath, date)
+		transaction := domain.NewTransaction(userID, amount, filename, date)
 		transactions = append(transactions, transaction)
 	}
 

@@ -60,6 +60,7 @@ func (s *TransactionService) GetTransactionSummary(ctx context.Context, accountI
 	for _, t := range transactions {
 		key := t.InputDate.Format("2006-01")
 		summary.TotalCount++
+		summary.TotalBalance += t.Amount
 
 		if _, ok := summary.Monthly[key]; !ok {
 			summary.Monthly[key] = &domain.TransactionMonthly{
@@ -74,14 +75,12 @@ func (s *TransactionService) GetTransactionSummary(ctx context.Context, accountI
 
 		if t.Amount > 0 {
 			summary.CreditCount++
-			summary.TotalBalance += t.Amount
 			summary.TotalCredit += t.Amount
 			summary.Monthly[key].AverageCredit += t.Amount
 			summary.Monthly[key].CreditCount++
 			summary.Monthly[key].Balance += t.Amount
 		} else {
 			summary.DebitCount++
-			summary.TotalBalance -= t.Amount
 			summary.TotalDebit += t.Amount
 			summary.Monthly[key].AverageDebit += t.Amount
 			summary.Monthly[key].DebitCount++

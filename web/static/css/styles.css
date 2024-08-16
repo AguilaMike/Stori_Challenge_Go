@@ -79,7 +79,165 @@ button {
   padding: 0.5rem 1rem;
   cursor: pointer;
 }
-
 button:hover {
   background-color: #555;
+}
+.container-transaction {
+  margin: 0 auto;
+  padding-bottom: 20px;
+}
+.summary-section {
+  background-color: #f0f0f0;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  position: relative;
+}
+.button-container {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
+.credit-debit-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.details-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 10px;
+}
+.detail-section-item {
+  padding: 20px;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+}
+h3,
+h4 {
+  margin-top: 0;
+  color: #333;
+}
+p {
+  margin: 5px 0;
+}
+.toggle-details {
+  float: right;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+.toggle-details {
+  float: right;
+  background-color: #333;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+.toggle-details:hover {
+  background-color: #555;
+}
+.transaction-details {
+  display: none;
+}
+#credit-debit-toggle {
+  background-color: #333;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 1em;
+}
+#credit-debit-toggle:hover {
+  background-color: #555;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.icon-button:hover {
+  background-color: #f0f0f0;
+  border-radius: 50%;
+}
+
+.icon-button svg {
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  color: #333;
+}
+
+/* Tooltip styles */
+.icon-button {
+  position: relative;
+}
+
+.icon-button::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background-color: #333;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.icon-button:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Estilos para las notificaciones individuales */
+.notification {
+  background-color: #f8f8f8;
+  border-left: 4px solid #333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 10px;
+  max-width: 300px;
+  padding: 12px 20px;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+  z-index: 9999;
+}
+
+/* Estilos para los diferentes tipos de notificaciones */
+.notification.success {
+  border-color: #4caf50;
+}
+
+.notification.error {
+  border-color: #f44336;
+}
+
+.notification.warning {
+  border-color: #ffc107;
+}
+
+.notification.info {
+  border-color: #2196f3;
 }

@@ -63,8 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
             loadUsers();
             newUserModal.style.display = 'none';
             newUserForm.reset();
+            showNotification('Account creada exitosamente', 'success');
         })
-        .catch(error => console.error('Error creating user:', error));
+        .catch(error => {
+            console.error('Error creating user:', error);
+            showNotification('Error al crear la cuenta', 'error');
+        });
     }
 
     function showUserDetails(userId) {
@@ -73,63 +77,117 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.json())
             .then(user => {
                 userDetailsTitle.textContent = `Detalles de ${user.nickname}`;
+                document.getElementById('send-email-btn').setAttribute('data-user-id', userId);
                 return fetch(`${apiTransactions}/summary/${userId}`);
             })
             .then(response => response.json())
-            .then(transactions => {
-                displayTransactions(transactions);
+            .then(transaction => {
+                displayTransactions(transaction);
                 userDetailsModal.style.display = 'block';
             })
             .catch(error => console.error('Error loading user details:', error));
     }
 
-    function displayTransactions(transactions) {
-        //const groupedTransactions = groupTransactionsByYearAndMonth(transactions);
-        let html = '';
-        // for (const [year, months] of Object.entries(groupedTransactions)) {
-        //     html += `<h3>${year}</h3>`;
-        //     for (const [month, data] of Object.entries(months)) {
-        //         html += `
-        //             <h4>${month}</h4>
-        //             <p>Total: $${data.total.toFixed(2)}</p>
-        //             <p>Promedio: $${data.average.toFixed(2)}</p>
-        //             <ul>
-        //                 ${data.transactions.map(t => `<li>$${t.amount} (${new Date(t.date).toLocaleDateString()})</li>`).join('')}
-        //             </ul>
-        //         `;
-        //     }
-        // }
+    function displayTransactions(transaction) {
+        let html = displayHeader(transaction);
+
+        // Obtenemos las claves (yyyy-MM) y las ordenamos
+        const sortedKeys = Object.keys(transaction.monthly).sort((a, b) => new Date(b) - new Date(a));
+
+        let detalleHTML = '';
+        sortedKeys.forEach(key => {
+            const data = transaction.monthly[key];
+            detalleHTML += `
+                <div class="detail-section-item">
+                    <h3>${key} <button class="toggle-details">Mostrar</button></h3>
+                    <div class="transaction-details" style="display: none;">
+                        <p>Balance: $${data.balance.toFixed(2)}</p>
+                        <p>Operaciones: $${data.total_transactions}</p>
+                        <p>Promedi Credito: $${data.average_credit.toFixed(2)}</p>
+                        <p>Promedi Debito: $${data.average_debit.toFixed(2)}</p>
+                        <ul>
+                            ${data.transactions.map(t => `<li>$${t.amount} (${new Date(t.input_date).toLocaleDateString()})</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        });
+        if (detalleHTML) {
+            detalleHTML = `<div class="details-section">${detalleHTML}</div>`;
+            html = html.replace('##DETALLES##', detalleHTML);
+        }
+
         transactionsList.innerHTML = html;
+
+        // Add event listeners for toggling details
+        document.querySelectorAll('.toggle-details').forEach(button => {
+            button.addEventListener('click', function() {
+                const details = this.closest('.detail-section-item').querySelector('.transaction-details');
+                details.style.display = details.style.display === 'none' ? 'block' : 'none';
+                this.textContent = details.style.display === 'none' ? 'Mostrar' : 'Ocultar';
+            });
+        });
+
+        // Add event listener for toggling credit/debit section
+        const creditDebitToggle = document.getElementById('credit-debit-toggle');
+        const creditDebitSection = document.querySelector('.credit-debit-section');
+        creditDebitToggle.addEventListener('click', function() {
+            creditDebitSection.style.display = creditDebitSection.style.display === 'none' ? 'grid' : 'none';
+            this.textContent = creditDebitSection.style.display === 'none' ? 'Mostrar Detalles' : 'Ocultar Detalles';
+        });
     }
 
-    function groupTransactionsByYearAndMonth(transactions) {
-        return transactions.reduce((acc, t) => {
-            const date = new Date(t.date);
-            const year = date.getFullYear();
-            const month = date.toLocaleString('default', { month: 'long' });
-            if (!acc[year]) acc[year] = {};
-            if (!acc[year][month]) acc[year][month] = { total: 0, count: 0, transactions: [] };
-            acc[year][month].total += t.amount;
-            acc[year][month].count++;
-            acc[year][month].average = acc[year][month].total / acc[year][month].count;
-            acc[year][month].transactions.push(t);
-            return acc;
-        }, {});
+    function displayHeader(transaction) {
+        let html = '';
+        if (transaction.summary) {
+            html += `
+            <div class="container-transaction">
+                <div class="summary-section">
+                    <h3>Resumen Total</h3>
+                    <p>Balance: $${transaction.summary.total_balance.toFixed(2)}</p>
+                    <p>Operaciones: $${transaction.summary.total_count}</p>
+                    <div class="button-container">
+                        <button id="credit-debit-toggle">Mostrar Detalles</button>
+                    </div>
+                </div>
+                <div class="credit-debit-section" style="display: none;">
+                    <div class="detail-section-item">
+                        <h4>Creditos</h4>
+                        <p>Total: $${transaction.summary.total_credit.toFixed(2)}</p>
+                        <p>Promedio: $${transaction.summary.average_credit.toFixed(2)}</p>
+                        <p>Operaciones: $${transaction.summary.credit_count}</p>
+                    </div>
+                    <div class="detail-section-item">
+                        <h4>Debitos</h4>
+                        <p>Total: $${transaction.summary.total_debit.toFixed(2)}</p>
+                        <p>Promedio: $${transaction.summary.average_debit.toFixed(2)}</p>
+                        <p>Operaciones: $${transaction.summary.debit_count}</p>
+                    </div>
+                </div>
+                ##DETALLES##
+            </div>
+            `;
+        }
+
+        return html;
     }
 
     function sendEmail() {
-        const userId = userDetailsTitle.dataset.userId;
+        const userId = this.getAttribute('data-user-id');
         fetch(`/api/accounts/${userId}/send-summary`, { method: 'POST' })
             .then(response => response.json())
-            .then(data => alert('Resumen enviado por correo'))
-            .catch(error => console.error('Error sending email:', error));
+            .then(data => showNotification('Resumen enviado por correo', 'success'))
+            .catch(error => {
+                console.error('Error sending email:', error);
+                showNotification('Error al enviar correo', 'error');
+            });
     }
 
     function uploadTransactionFile(event) {
         event.preventDefault();
         const file = fileInput.files[0];
         if (!file) {
-            alert('Por favor, selecciona un archivo primero.');
+            showNotification('Por favor, selecciona un archivo primero.', 'warning');
             return;
         }
 
@@ -144,12 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => response.text())
         .then(result => {
             console.log('Upload successful:', result);
-            alert('Archivo procesado correctamente');
+            showNotification('Archivo procesado correctamente', 'success');
             showUserDetails(userId);
         })
         .catch(error => {
             console.error('Error uploading file:', error);
-            alert('Error al procesar el archivo');
+            showNotification('Error al procesar el archivo', 'error');
         });
     }
 
@@ -196,5 +254,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
+    // Función para mostrar notificaciones
+    function showNotification(message, type = 'info') {
+        const container = document.getElementById('notification-container');
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
 
+        container.appendChild(notification);
+
+        // Animar la entrada de la notificación
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+            notification.style.opacity = '1';
+        }, 100);
+
+        // Remover la notificación después de 5 segundos
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                container.removeChild(notification);
+            }, 300);
+        }, 5000);
+    }
 });

@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/google/uuid"
@@ -71,16 +72,37 @@ func (r *ElasticsearchTransactionRepository) GetByID(ctx context.Context, id uui
 }
 
 func (r *ElasticsearchTransactionRepository) GetByAccountID(ctx context.Context, accountID uuid.UUID, limit, offset int64) ([]*domain.Transaction, error) {
-	query := elastic.NewTermQuery("account_id", accountID.String())
+	// Crear la consulta
+	query := elastic.NewTermQuery("AccountID.keyword", accountID.String())
+
+	// Crear el source de búsqueda
+	searchSource := elastic.NewSearchSource().
+		Query(query).
+		From(int(offset)).
+		Size(int(limit))
+
+	// Imprimir la consulta para depuración
+	// searchSourceJSON, err := searchSource.Source()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error getting search source: %v", err)
+	// }
+	// jsonQuery, err := json.MarshalIndent(searchSourceJSON, "", "  ")
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error marshalling query to JSON: %v", err)
+	// }
+	//log.Printf("Elasticsearch query: %s", string(jsonQuery))
+
+	// Ejecutar la búsqueda
 	searchResult, err := r.client.Search().
 		Index(r.index).
-		Query(query).
-		//From(int(offset)).
-		//Size(int(limit)).
+		SearchSource(searchSource).
 		Do(ctx)
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error executing Elasticsearch query: %v", err)
 	}
+
+	//log.Printf("Elasticsearch found %d results", searchResult.TotalHits())
 
 	var transactions []*domain.Transaction
 	for _, hit := range searchResult.Hits.Hits {
@@ -95,7 +117,7 @@ func (r *ElasticsearchTransactionRepository) GetByAccountID(ctx context.Context,
 }
 
 func (r *ElasticsearchTransactionRepository) GetSummary(ctx context.Context, accountID uuid.UUID) (*domain.TransactionSummary, error) {
-	query := elastic.NewTermQuery("account_id", accountID.String())
+	query := elastic.NewTermQuery("accountid", accountID.String())
 
 	aggs := elastic.NewTermsAggregation().Field("type")
 	aggs.SubAggregation("total", elastic.NewSumAggregation().Field("amount"))

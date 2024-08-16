@@ -78,8 +78,7 @@ func main() {
 	templateDir := filepath.Join("web", "templates")
 	staticDir := filepath.Join("web", "static")
 	// Inicializar el servicio de carga de archivos
-	uploadDir := "./uploads" // Asegúrate de que este directorio exista
-	fileUploadService, err := files.NewFileUploadService(nc, uploadDir)
+	fileUploadService, err := files.NewFileUploadService(nc)
 	if err != nil {
 		log.Fatalf("Failed to create file upload service: %v", err)
 	}
