@@ -17,15 +17,30 @@ This project implements the Stori Software Engineer Technical Challenge.
 2. Create a `.env` file in the project root and configure your environment variables.
     ```
     DB_DRIVER=postgres
-    DB_URL=postgres://user:password@db:5432/stori?sslmode=disable
+    DATABASE_URL=postgres://storiuser:storipass@postgres:5432/stori?sslmode=disable
+    DATABASE_USER=storiuser
+    DATABASE_PASSWORD=storipass
+    DATABASE_HOST=postgres
+    DATABASE_PORT=5432
+    DATABASE_NAME=stori
+    DATABASE_SSLMODE=disable
+    DATABASE_MAX_CONNECTIONS=10
+    DATABASE_MAX_IDLE_CONNECTIONS=10
+
     ELASTICSEARCH_URL=http://elasticsearch:9200
+
     NATS_URL=nats://nats:4222
+
     API_PORT=8080
     GRPC_PORT=50051
-    SMTP_HOST=smtp.example.com
+
+    SMTP_HOST=smtp.gmail.com
     SMTP_PORT=587
-    SMTP_USER=your_email@example.com
-    SMTP_PASSWORD=your_email_password
+    SMTP_USER=david.hernandez.prueba.smtp@gmail.com
+    SMTP_PASSWORD=lkxvqwkujsavtkqj
+
+    DOMAIN=api
+    MIGRATE_NOSSL=true
     ```
 3. Build and run the project using Docker Compose:
     ```
