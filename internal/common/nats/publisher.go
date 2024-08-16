@@ -35,3 +35,7 @@ func (c *NatsClient) Subscribe(subject string, callback func([]byte)) (*nats.Sub
 func (c *NatsClient) Close() {
 	c.nc.Close()
 }
+
+func (c *NatsClient) GetConnection() *nats.Conn {
+	return c.nc
+}

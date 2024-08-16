@@ -17,6 +17,7 @@ import (
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/elasticsearch"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/email"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/nats"
+	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/websocket"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/transaction/application"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/transaction/domain"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/transaction/infrastructure"
@@ -76,8 +77,11 @@ func main() {
 	}
 	defer natsClient.Close()
 
+	// Initialize WebSocket service
+	wsService := websocket.NewWebSocketService()
+
 	// Set up your worker logic here
-	err = setupWorkerTasks(natsClient, transactionService)
+	err = setupWorkerTasks(natsClient, transactionService, wsService)
 	if err != nil {
 		log.Fatalf("Failed to set up worker tasks: %v", err)
 	}
@@ -94,36 +98,16 @@ func main() {
 
 func setupWorkerTasks(
 	natsClient *nats.NatsClient,
-	transactionService *application.TransactionService) error {
-	_, err := natsClient.Subscribe("transaction.created", func(data []byte) {
-		// Process the message
-		var transaction struct {
-			ID     string  `json:"id"`
-			Amount float64 `json:"amount"`
-			// Add other fields as needed
-		}
+	transactionService *application.TransactionService,
+	wsService *websocket.WebSocketService) error {
 
-		err := json.Unmarshal(data, &transaction)
-		if err != nil {
-			log.Printf("Error unmarshaling transaction: %v", err)
-			return
-		}
-
-		log.Printf("Received a new transaction: ID=%s, Amount=%.2f", transaction.ID, transaction.Amount)
-
-		// Here you would implement your business logic
-		// For example, update the database, send an email, etc.
-	})
-	if err != nil {
-		return err
-	}
-
-	_, err = natsClient.Subscribe("transaction.file.uploaded", func(data []byte) {
+	_, err := natsClient.Subscribe("transaction.file.uploaded", func(data []byte) {
 		var fileInfo struct {
 			FilePath string    `json:"file_path"`
 			UserID   uuid.UUID `json:"user_id"`
 		}
 
+		log.Printf("Processing file: %s", data)
 		err := json.Unmarshal(data, &fileInfo)
 		if err != nil {
 			log.Printf("Error unmarshaling file info: %v", err)
@@ -154,6 +138,13 @@ func setupWorkerTasks(
 			log.Printf("Error sending summary email: %v", err)
 			return
 		}
+
+		// Enviar actualización a través de WebSocket
+		updateMessage, _ := json.Marshal(map[string]interface{}{
+			"type":    "transaction_update",
+			"summary": summary,
+		})
+		wsService.SendUpdate(fileInfo.UserID.String(), updateMessage)
 
 		log.Printf("Successfully processed file %s for user %s", fileInfo.FilePath, fileInfo.UserID)
 	})

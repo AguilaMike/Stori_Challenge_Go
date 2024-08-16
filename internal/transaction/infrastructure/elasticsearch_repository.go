@@ -75,8 +75,8 @@ func (r *ElasticsearchTransactionRepository) GetByAccountID(ctx context.Context,
 	searchResult, err := r.client.Search().
 		Index(r.index).
 		Query(query).
-		From(int(offset)).
-		Size(int(limit)).
+		//From(int(offset)).
+		//Size(int(limit)).
 		Do(ctx)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (r *ElasticsearchTransactionRepository) GetSummary(ctx context.Context, acc
 	aggs.SubAggregation("total", elastic.NewSumAggregation().Field("amount"))
 	aggs.SubAggregation("avg", elastic.NewAvgAggregation().Field("amount"))
 	aggs.SubAggregation("count", elastic.NewValueCountAggregation().Field("_id"))
-	aggs.SubAggregation("by_month", elastic.NewDateHistogramAggregation().Field("input_date").CalendarInterval("month"))
+	aggs.SubAggregation("by_year_month", elastic.NewDateHistogramAggregation().Field("input_date").CalendarInterval("month").Format("yyyy-MM"))
 
 	searchResult, err := r.client.Search().
 		Index(r.index).
@@ -114,7 +114,7 @@ func (r *ElasticsearchTransactionRepository) GetSummary(ctx context.Context, acc
 	}
 
 	summary := &domain.TransactionSummary{
-		MonthlyTransactions: make(map[string]int),
+		Monthly: make(map[string]*domain.TransactionMonthly),
 	}
 
 	if agg, found := searchResult.Aggregations.Terms("transactions"); found {
@@ -139,14 +139,6 @@ func (r *ElasticsearchTransactionRepository) GetSummary(ctx context.Context, acc
 
 			if countAgg, found := bucket.ValueCount("count"); found {
 				summary.TotalCount += int(*countAgg.Value)
-			}
-
-			if monthlyAgg, found := bucket.DateHistogram("by_month"); found {
-				for _, monthBucket := range monthlyAgg.Buckets {
-					month := monthBucket.KeyAsString
-					count := int(monthBucket.DocCount)
-					summary.MonthlyTransactions[*month] = count
-				}
 			}
 		}
 	}

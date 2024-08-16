@@ -12,7 +12,7 @@ services:
       - "8222:8222"
     command: "--jetstream"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8222/healthz"]
+      test: ["CMD", "/nats-server", "--version"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -85,39 +85,6 @@ services:
     networks:
       - stori-network
 
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    ports:
-      - "8080:8080"
-      - "50051:50051"
-    depends_on:
-      nats:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      mailhog:
-        condition: service_started
-    environment:
-      - DATABASE_URL=postgres://storiuser:storipass@postgres:5432/stori?sslmode=disable
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - NATS_URL=nats://nats:4222
-      - SMTP_HOST=mailhog
-      - SMTP_PORT=1025
-      - API_PORT=8080
-      - GRPC_PORT=50051
-    networks:
-      - stori-network
-    restart: on-failure
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   worker:
     build:
       context: .
@@ -140,6 +107,41 @@ services:
     networks:
       - stori-network
     restart: on-failure
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    depends_on:
+      nats:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+      worker:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgres://storiuser:storipass@postgres:5432/stori?sslmode=disable
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - NATS_URL=nats://nats:4222
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - API_PORT=8080
+      - GRPC_PORT=50051
+    networks:
+      - stori-network
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 volumes:
   esdata:

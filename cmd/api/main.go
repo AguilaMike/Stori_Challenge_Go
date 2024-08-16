@@ -20,7 +20,9 @@ import (
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/db"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/elasticsearch"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/email"
+	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/files"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/nats"
+	"github.com/AguilaMike/Stori_Challenge_Go/internal/common/websocket"
 	"github.com/AguilaMike/Stori_Challenge_Go/internal/transaction"
 	"github.com/AguilaMike/Stori_Challenge_Go/pkg/api"
 	"github.com/AguilaMike/Stori_Challenge_Go/pkg/web"
@@ -75,7 +77,17 @@ func main() {
 	// Configurar rutas web
 	templateDir := filepath.Join("web", "templates")
 	staticDir := filepath.Join("web", "static")
-	webMux, err := web.SetupWebRoutes(accountService, transactionService, templateDir, staticDir)
+	// Inicializar el servicio de carga de archivos
+	uploadDir := "./uploads" // Asegúrate de que este directorio exista
+	fileUploadService, err := files.NewFileUploadService(nc, uploadDir)
+	if err != nil {
+		log.Fatalf("Failed to create file upload service: %v", err)
+	}
+
+	// Inicializar el servicio de WebSocket
+	wsService := websocket.NewWebSocketService()
+
+	webMux, err := web.SetupWebRoutes(accountService, fileUploadService, wsService, pgDB, esClient, nc.GetConnection(), templateDir, staticDir)
 	if err != nil {
 		log.Fatalf("Failed to set up web routes: %v", err)
 	}

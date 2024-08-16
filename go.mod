@@ -42,6 +42,7 @@ require (
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.17.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/nats-io/nats.go v1.36.0

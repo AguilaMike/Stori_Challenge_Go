@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Elementos del DOM
     const userList = document.getElementById('users');
     const newUserBtn = document.getElementById('new-user-btn');
     const newUserModal = document.getElementById('new-user-modal');
@@ -8,6 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const transactionsList = document.getElementById('transactions-list');
     const sendEmailBtn = document.getElementById('send-email-btn');
     const uploadForm = document.getElementById('upload-form');
+    const fileInput = document.getElementById('transaction-file');
+    // url apis
+    const apiAccounts = '/api/accounts';
+    const apiTransactions = '/api/transactions';
 
     // Cargar usuarios al iniciar la página
     loadUsers();
@@ -25,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function loadUsers() {
-        fetch('/users')
+        fetch(apiAccounts)
             .then(response => response.json())
             .then(users => {
                 userList.innerHTML = '';
@@ -48,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createUser(event) {
         event.preventDefault();
         const formData = new FormData(newUserForm);
-        fetch('/users/create', {
+        fetch(apiAccounts, {
             method: 'POST',
             body: JSON.stringify(Object.fromEntries(formData)),
             headers: { 'Content-Type': 'application/json' }
@@ -63,11 +68,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showUserDetails(userId) {
-        fetch(`/users/detail/${userId}`)
+        storage.setItem('user_id', userId);
+        fetch(`${apiAccounts}/${userId}`)
             .then(response => response.json())
             .then(user => {
                 userDetailsTitle.textContent = `Detalles de ${user.nickname}`;
-                return fetch(`/api/transactions?account_id=${userId}`);
+                return fetch(`${apiTransactions}/summary/${userId}`);
             })
             .then(response => response.json())
             .then(transactions => {
@@ -78,21 +84,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayTransactions(transactions) {
-        const groupedTransactions = groupTransactionsByYearAndMonth(transactions);
+        //const groupedTransactions = groupTransactionsByYearAndMonth(transactions);
         let html = '';
-        for (const [year, months] of Object.entries(groupedTransactions)) {
-            html += `<h3>${year}</h3>`;
-            for (const [month, data] of Object.entries(months)) {
-                html += `
-                    <h4>${month}</h4>
-                    <p>Total: $${data.total.toFixed(2)}</p>
-                    <p>Promedio: $${data.average.toFixed(2)}</p>
-                    <ul>
-                        ${data.transactions.map(t => `<li>$${t.amount} (${new Date(t.date).toLocaleDateString()})</li>`).join('')}
-                    </ul>
-                `;
-            }
-        }
+        // for (const [year, months] of Object.entries(groupedTransactions)) {
+        //     html += `<h3>${year}</h3>`;
+        //     for (const [month, data] of Object.entries(months)) {
+        //         html += `
+        //             <h4>${month}</h4>
+        //             <p>Total: $${data.total.toFixed(2)}</p>
+        //             <p>Promedio: $${data.average.toFixed(2)}</p>
+        //             <ul>
+        //                 ${data.transactions.map(t => `<li>$${t.amount} (${new Date(t.date).toLocaleDateString()})</li>`).join('')}
+        //             </ul>
+        //         `;
+        //     }
+        // }
         transactionsList.innerHTML = html;
     }
 
@@ -121,18 +127,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function uploadTransactionFile(event) {
         event.preventDefault();
-        const userId = userDetailsTitle.dataset.userId;
-        const formData = new FormData(uploadForm);
-        formData.append('user_id', userId);
+        const file = fileInput.files[0];
+        if (!file) {
+            alert('Por favor, selecciona un archivo primero.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('transactionFile', file);
+        formData.append('userID', storage.getItem('user_id'));
+
         fetch('/upload', {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(response => response.text())
+        .then(result => {
+            console.log('Upload successful:', result);
             alert('Archivo procesado correctamente');
             showUserDetails(userId);
         })
-        .catch(error => console.error('Error uploading file:', error));
+        .catch(error => {
+            console.error('Error uploading file:', error);
+            alert('Error al procesar el archivo');
+        });
     }
+
+    // LocalStorage
+    const storage = {
+        setItem: (key, value) => localStorage.setItem(key, JSON.stringify(value)),
+        getItem: key => JSON.parse(localStorage.getItem(key))
+    };
+
+    // Función para generar un ID único
+    function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    // WebSockets
+    // Obtener o generar usuario para webSocket
+    function getOrCreateUserId() {
+        let userId = localStorage.getItem('WSuserId');
+        if (!userId) {
+            userId = generateUUID();
+            localStorage.setItem('WSuserId', userId);
+        }
+        return userId;
+    }
+
+    // Conexión al servidor de WebSockets
+    const ws = new WebSocket(`ws://${window.location.host}/ws/?userID=${getOrCreateUserId()}`);
+
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        if (data.type === 'transaction_update') {
+            updateTransactionUI(data.summary);
+        }
+    };
+
+    socket.onclose = function(event) {
+        console.log('WebSocket connection closed:', event);
+    };
+
+    function updateTransactionUI(summary) {
+
+    }
+
+
 });

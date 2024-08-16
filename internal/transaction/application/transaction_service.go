@@ -54,35 +54,51 @@ func (s *TransactionService) GetTransactionSummary(ctx context.Context, accountI
 	}
 
 	summary := &domain.TransactionSummary{
-		MonthlyTransactions:  make(map[string]int),
-		MonthlyBalance:       make(map[string]float64),
-		MonthlyAverageCredit: make(map[string]float64),
-		MonthlyAverageDebit:  make(map[string]float64),
+		Monthly: make(map[string]*domain.TransactionMonthly),
 	}
 
 	for _, t := range transactions {
-		month := t.InputDate.Format("2006-Jan")
-		summary.TotalBalance += t.Amount
+		key := t.InputDate.Format("2006-01")
 		summary.TotalCount++
-		summary.MonthlyTransactions[month]++
-		summary.MonthlyBalance[month] += t.Amount
+
+		if _, ok := summary.Monthly[key]; !ok {
+			summary.Monthly[key] = &domain.TransactionMonthly{
+				Year:         t.InputDate.Year(),
+				Month:        int(t.InputDate.Month()),
+				Transactions: make([]domain.Transaction, 0),
+			}
+		}
+
+		summary.Monthly[key].Transactions = append(summary.Monthly[key].Transactions, *t)
+		summary.Monthly[key].Total++
 
 		if t.Amount > 0 {
-			summary.TotalCredit += t.Amount
 			summary.CreditCount++
-			summary.MonthlyAverageCredit[month] += t.Amount
+			summary.TotalBalance += t.Amount
+			summary.TotalCredit += t.Amount
+			summary.Monthly[key].AverageCredit += t.Amount
+			summary.Monthly[key].CreditCount++
+			summary.Monthly[key].Balance += t.Amount
 		} else {
-			summary.TotalDebit += t.Amount
 			summary.DebitCount++
-			summary.MonthlyAverageDebit[month] += t.Amount
+			summary.TotalBalance -= t.Amount
+			summary.TotalDebit += t.Amount
+			summary.Monthly[key].AverageDebit += t.Amount
+			summary.Monthly[key].DebitCount++
+			summary.Monthly[key].Balance -= t.Amount
 		}
 	}
 
-	for month := range summary.MonthlyAverageCredit {
-		if count := float64(summary.MonthlyTransactions[month]); count > 0 {
-			summary.MonthlyAverageCredit[month] /= count
-			summary.MonthlyAverageDebit[month] /= count
+	// Recorremos los Montlhy del summary
+	for k, v := range summary.Monthly {
+		if v.CreditCount > 0 {
+			v.AverageCredit = v.AverageCredit / float64(v.CreditCount)
 		}
+
+		if v.DebitCount > 0 {
+			v.AverageDebit = v.AverageDebit / float64(v.DebitCount)
+		}
+		summary.Monthly[k] = v
 	}
 
 	if summary.CreditCount > 0 {
@@ -94,7 +110,6 @@ func (s *TransactionService) GetTransactionSummary(ctx context.Context, accountI
 	}
 
 	return summary, nil
-	//return s.query.GetSummary(ctx, accountID)
 }
 
 func (s *TransactionService) CreateBulkTransactions(ctx context.Context, transactions []*domain.Transaction) error {

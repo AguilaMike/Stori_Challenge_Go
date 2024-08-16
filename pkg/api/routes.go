@@ -11,16 +11,19 @@ import (
 	"google.golang.org/grpc"
 )
 
-func SetupHTTPRoutes(accountService *appAccount.AccountService, transactionService *appTran.TransactionService) *http.ServeMux {
+func SetupHTTPRoutes(
+	accountService *appAccount.AccountService, transactionService *appTran.TransactionService) *http.ServeMux {
 	router := http.NewServeMux()
 
 	accountHandler := rest.NewAccountHandler(accountService)
 	transactionHandler := rest.NewTransactionHandler(transactionService)
 
-	router.HandleFunc("/accounts", accountHandler.CreateAccount)
+	// Account routes
+	router.HandleFunc("/accounts", accountHandler.Manager)
 	router.HandleFunc("/accounts/{id}", accountHandler.GetAccount)
-	router.HandleFunc("/transactions", transactionHandler.CreateTransaction)
-	router.HandleFunc("/transactions/summary", transactionHandler.GetTransactionSummary)
+
+	// Transaction routes
+	router.HandleFunc("/transactions/summary/{account_id}", transactionHandler.GetTransactionSummary)
 
 	return router
 }

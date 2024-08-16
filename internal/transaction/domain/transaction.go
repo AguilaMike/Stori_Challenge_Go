@@ -17,18 +17,27 @@ type Transaction struct {
 }
 
 type TransactionSummary struct {
-	AverageCredit        float64
-	AverageDebit         float64
-	CreditCount          int
-	DebitCount           int
-	TotalBalance         float64
-	TotalCount           int
-	TotalCredit          float64
-	TotalDebit           float64
-	MonthlyTransactions  map[string]int
-	MonthlyBalance       map[string]float64
-	MonthlyAverageCredit map[string]float64
-	MonthlyAverageDebit  map[string]float64
+	AverageCredit float64
+	AverageDebit  float64
+	CreditCount   int
+	DebitCount    int
+	TotalBalance  float64
+	TotalCount    int
+	TotalCredit   float64
+	TotalDebit    float64
+	Monthly       map[string]*TransactionMonthly
+}
+
+type TransactionMonthly struct {
+	Year          int
+	Month         int
+	AverageCredit float64
+	AverageDebit  float64
+	Balance       float64
+	CreditCount   int
+	DebitCount    int
+	Total         int
+	Transactions  []Transaction
 }
 
 const (
