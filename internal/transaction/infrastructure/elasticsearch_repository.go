@@ -81,17 +81,6 @@ func (r *ElasticsearchTransactionRepository) GetByAccountID(ctx context.Context,
 		From(int(offset)).
 		Size(int(limit))
 
-	// Imprimir la consulta para depuración
-	// searchSourceJSON, err := searchSource.Source()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error getting search source: %v", err)
-	// }
-	// jsonQuery, err := json.MarshalIndent(searchSourceJSON, "", "  ")
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error marshalling query to JSON: %v", err)
-	// }
-	//log.Printf("Elasticsearch query: %s", string(jsonQuery))
-
 	// Ejecutar la búsqueda
 	searchResult, err := r.client.Search().
 		Index(r.index).
@@ -101,8 +90,6 @@ func (r *ElasticsearchTransactionRepository) GetByAccountID(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("error executing Elasticsearch query: %v", err)
 	}
-
-	//log.Printf("Elasticsearch found %d results", searchResult.TotalHits())
 
 	var transactions []*domain.Transaction
 	for _, hit := range searchResult.Hits.Hits {
