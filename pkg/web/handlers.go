@@ -56,7 +56,7 @@ func UploadFileHandler(fileUploadService *files.FileUploadService) http.HandlerF
 		file, header, err := r.FormFile("transactionFile")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			log.Fatalf("Error al obtener el archivo de la solicitud: %+v", err)
+			log.Printf("Error al obtener el archivo de la solicitud: %+v", err)
 			return
 		}
 		defer file.Close()
@@ -64,14 +64,14 @@ func UploadFileHandler(fileUploadService *files.FileUploadService) http.HandlerF
 		userID, err := uuid.Parse(r.FormValue("userID"))
 		if err != nil {
 			http.Error(w, "Invalid user ID", http.StatusBadRequest)
-			log.Fatalf("Error al obtener el ID del usuario: %+v", err)
+			log.Printf("Error al obtener el ID del usuario: %+v", err)
 			return
 		}
 
 		err = fileUploadService.UploadTransactionFile(r.Context(), file, header, userID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.Fatalf("Error al cargar el archivo: %+v", err)
+			log.Printf("Error al cargar el archivo: %+v", err)
 			return
 		}
 

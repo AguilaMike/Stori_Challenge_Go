@@ -20,6 +20,7 @@ COPY --from=builder /app/.env .env
 COPY --from=builder /app/main .
 COPY --from=builder /app/web ./web
 COPY --from=builder /app/scripts/migrations ./migrations
+COPY --from=builder /app/internal/common/email/templates ./templates/email
 
 EXPOSE 8080 50051
 

@@ -24,6 +24,7 @@ func SetupHTTPRoutes(
 
 	// Transaction routes
 	router.HandleFunc("/transactions/summary/{account_id}", transactionHandler.GetTransactionSummary)
+	router.HandleFunc("/transactions/send-sumamry/{account_id}", transactionHandler.SendEmailSummary)
 
 	return router
 }

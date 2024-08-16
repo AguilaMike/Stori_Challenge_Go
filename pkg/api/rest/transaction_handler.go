@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -80,6 +81,41 @@ func (h *TransactionHandler) GetTransactionSummary(w http.ResponseWriter, r *htt
 		}
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
+}
+
+func (h *TransactionHandler) SendEmailSummary(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	accountIDStr := r.PathValue("account_id")
+	accountID, err := uuid.Parse(accountIDStr)
+	if err != nil {
+		log.Printf("Error parsing account ID: %v", err)
+		http.Error(w, "Invalid account ID", http.StatusBadRequest)
+		return
+	}
+
+	summary, err := h.service.GetTransactionSummary(r.Context(), accountID)
+	if err != nil {
+		log.Printf("Error getting transaction summary: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.service.SendSummaryEmail(r.Context(), summary, accountID)
+	if err != nil {
+		log.Printf("Error sending summary email: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := map[string]string{
+		"message": "Email sent successfully",
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
 }

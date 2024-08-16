@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -120,10 +121,14 @@ func (s *TransactionService) SendSummaryEmail(ctx context.Context, summary *doma
 	request := &pb.GetAccountRequest{Id: userID.String()}
 	user, err := s.account.GetAccount(ctx, request)
 	if err != nil {
-		return err
+		log.Printf("Error getting user account: %v", err)
+		return fmt.Errorf("failed to get user account: %w", err)
 	}
 
-	s.sender.SendWithTemplate(user.Email, "summary.gohtml", summary)
-
+	err = s.sender.SendWithTemplate(user.Email, "Resumen de Transacciones", "summary.gohtml", summary)
+	if err != nil {
+		log.Printf("Error sending email: %v", err)
+		return fmt.Errorf("failed to send email: %w", err)
+	}
 	return nil
 }

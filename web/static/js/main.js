@@ -103,8 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="transaction-details" style="display: none;">
                         <p>Balance: $${data.balance.toFixed(2)}</p>
                         <p>Operaciones: $${data.total_transactions}</p>
-                        <p>Promedi Credito: $${data.average_credit.toFixed(2)}</p>
-                        <p>Promedi Debito: $${data.average_debit.toFixed(2)}</p>
+                        <p>Promedio Credito: $${data.average_credit.toFixed(2)}</p>
+                        <p>Promedio Debito: $${data.average_debit.toFixed(2)}</p>
                         <ul>
                             ${data.transactions.map(t => `<li>$${t.amount} (${new Date(t.input_date).toLocaleDateString()})</li>`).join('')}
                         </ul>
@@ -152,13 +152,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="credit-debit-section" style="display: none;">
                     <div class="detail-section-item">
-                        <h4>Creditos</h4>
+                        <h4>Credito</h4>
                         <p>Total: $${transaction.summary.total_credit.toFixed(2)}</p>
                         <p>Promedio: $${transaction.summary.average_credit.toFixed(2)}</p>
                         <p>Operaciones: $${transaction.summary.credit_count}</p>
                     </div>
                     <div class="detail-section-item">
-                        <h4>Debitos</h4>
+                        <h4>Debito</h4>
                         <p>Total: $${transaction.summary.total_debit.toFixed(2)}</p>
                         <p>Promedio: $${transaction.summary.average_debit.toFixed(2)}</p>
                         <p>Operaciones: $${transaction.summary.debit_count}</p>
@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function sendEmail() {
         const userId = this.getAttribute('data-user-id');
-        fetch(`/api/accounts/${userId}/send-summary`, { method: 'POST' })
+        fetch(`${apiTransactions}/send-sumamry/${userId}`, { method: 'POST' })
             .then(response => response.json())
             .then(data => showNotification('Resumen enviado por correo', 'success'))
             .catch(error => {

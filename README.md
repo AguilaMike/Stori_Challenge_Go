@@ -29,7 +29,7 @@ This project implements the Stori Software Engineer Technical Challenge.
     ```
 3. Build and run the project using Docker Compose:
     ```
-    docker-compose up --build
+    docker-compose up -d --build
     ```
 4. The API will be available at `http://localhost:8080` and the gRPC server at `localhost:50051`.
 
