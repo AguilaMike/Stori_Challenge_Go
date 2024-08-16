@@ -115,6 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (detalleHTML) {
             detalleHTML = `<div class="details-section">${detalleHTML}</div>`;
             html = html.replace('##DETALLES##', detalleHTML);
+        } else {
+            html = html.replace('##DETALLES##', '');
         }
 
         transactionsList.innerHTML = html;
