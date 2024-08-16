@@ -80,7 +80,7 @@ Migrations are automatically run when the application starts. To run them manual
 
 ## DEMO
 
-- Video [https://drive.google.com/file/d/1tWSTnpYYa0K1FQJGWW6rpBjwr-0EMTZc/view?usp=drive_link](Explain project in Spanish)
+- Video [Explain project in Spanish](https://drive.google.com/file/d/1tWSTnpYYa0K1FQJGWW6rpBjwr-0EMTZc/view?usp=drive_link)
 
 ## License
 
